@@ -292,3 +292,38 @@ func testWasiImportObject(t *testing.T) {
 	assert.NoError(t, err)
 
 }
+
+func testImportMemory(t *testing.T) {
+	module, err := wasm.Compile(getImportedFunctionBytes("log_import_memory.wasm"))
+	assert.NoError(t, err)
+
+	imports := wasm.NewImports().Namespace("env")
+	imports, err = imports.AppendFunction("log_message", logMessage, C.logMessage)
+	assert.NoError(t, err)
+	memory, err := wasm.NewMemory(17, 17)
+	assert.NoError(t, err)
+
+	defer memory.Close()
+
+	imports, err = imports.AppendMemory("memory", memory)
+	assert.NoError(t, err)
+
+	importObject := wasm.NewImportObject()
+	err = importObject.Extend(*imports)
+	assert.NoError(t, err)
+
+	instance, err := module.InstantiateWithImportObject(importObject)
+	assert.NoError(t, err)
+
+	defer instance.Close()
+
+	doSomething, exists := instance.Exports["do_something"]
+	assert.Equal(t, true, exists)
+
+	result, err := doSomething()
+
+	assert.Equal(t, wasm.TypeVoid, result.GetType())
+	assert.NoError(t, err)
+	assert.Equal(t, "hello", loggedMessage)
+	loggedMessage = ""
+}
