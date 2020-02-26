@@ -327,3 +327,10 @@ func testImportMemory(t *testing.T) {
 	assert.Equal(t, "hello", loggedMessage)
 	loggedMessage = ""
 }
+
+func testImportMemoryIsOwned(t *testing.T) {
+	memory, err := wasm.NewMemory(1, 1)
+
+	assert.NoError(t, err)
+	assert.Equal(t, true, memory.IsOwned())
+}
